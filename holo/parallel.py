@@ -1,4 +1,6 @@
 from collections.abc import Callable, Iterable
+from io import StringIO
+import sys
 
 from queue import Queue
 import threading
@@ -22,9 +24,17 @@ _MP_Process: "type[multiprocess.process.BaseProcess]" = \
     assertIsinstance(type, multiprocess.Process) # type: ignore # yes it exist ?!
 
 class MP_Exception():
-    __slots__ = ("err", )
+    __slots__ = ("err", "printedErrorText", )
+    
     def __init__(self, err: Exception) -> None:
         self.err = err
+        stream = StringIO()
+        print_exception(err, stream)
+        self.printedErrorText = stream.getvalue()
+        
+    def printException(self)->None:
+        print(self.printedErrorText, file=sys.stderr)
+        
 
 ### Tasks ### 
 
@@ -296,8 +306,9 @@ class ProcessManager(Generic[_T]):
         for res in results:
             if isinstance(res, MP_Exception):
                 hasExceptions = True
-                print_exception(res.err)
+                res.printException()
             else: filteredResults.append(res)
         if hasExceptions is True:
             raise RuntimeError("some tasks failed, tracebacks are alredy printed")
         return filteredResults
+

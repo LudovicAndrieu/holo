@@ -115,8 +115,8 @@ class HyperparametersSearch():
     
     @staticmethod
     def distance(param1:"_Param", param2:"_Param")->float:
-        return numpy.linalg.norm(
-            numpy.asarray(param1) - numpy.asarray(param2), ord=2)
+        return float(numpy.linalg.norm(
+            numpy.asarray(param1) - numpy.asarray(param2), ord=2))
     
     def __nbKeep(self, keepBest:"float|int")->float:
         if isinstance(keepBest, float):
