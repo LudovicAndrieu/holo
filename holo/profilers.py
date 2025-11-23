@@ -779,5 +779,5 @@ class ProgressBar():
             self.sl.newline(flush=True)
         else: 
             self.sl.print(
-                f"doing {self.taskName}: {self.estimator.progress*100:.4g} % done, "
-                f"eta: {self.estimator.remainingPrettyTime()}")
+                f"doing {self.taskName}: {self.estimator.progress*100:05.2f} % done, "
+                f"rem: {self.estimator.remainingPrettyTime()}")
