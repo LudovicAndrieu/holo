@@ -833,6 +833,13 @@ class SingleLinePrinter():
         self.__currentLineLength += len(text)
         if flush is True: 
             self.file.flush()
+    
+    def newline(self, flush:bool=True)->None:
+        """usualy to write a new line when you finished using it and whant to keep the last print"""
+        self.file.write("\n")
+        self.__currentLineLength = 0
+        if flush is True: 
+            self.file.flush()
 
 def NDigitsRounding(x:float, nbDigits:int)->float:
     return float(f"{x:.{nbDigits}g}")

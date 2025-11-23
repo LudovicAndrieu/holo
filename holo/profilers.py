@@ -8,7 +8,7 @@ from .__typing import (
     LiteralString, Self, TypeGuard, Literal,
     override, assertIsinstance, Union,
 )
-from .prettyFormats import prettyTime
+from .prettyFormats import prettyTime, SingleLinePrinter
 from .protocols import _T, _P
 
 
@@ -752,3 +752,32 @@ class RemainingTime_ema(_RemainingTime_Base):
             self.__currentSpeed = self.__currentSpeed * (1-self.emaCoef) + self.emaCoef * speed
         self._tLastAdd = now
         
+
+
+class ProgressBar():
+    __slots__ = ("estimator", "sl", "taskName", "newLineWhenFinished", )
+    
+    @staticmethod
+    def simpleConfig(nbSteps:int, taskName:str, useEma:bool=True)->"ProgressBar":
+        return ProgressBar(
+            estimator=(RemainingTime_ema(finalAmount=nbSteps, start=True, emaCoef=0.2) 
+                       if useEma else RemainingTime_mean(finalAmount=nbSteps, start=True)),
+            printer=SingleLinePrinter(file=None),
+            taskName=taskName, newLineWhenFinished=True)
+    
+    def __init__(self, estimator:_RemainingTime_Base, printer:SingleLinePrinter,
+                 taskName: str, newLineWhenFinished:bool=True) -> None:
+        self.estimator: _RemainingTime_Base = estimator
+        self.sl: SingleLinePrinter = printer
+        self.taskName: str = taskName
+        self.newLineWhenFinished: bool = newLineWhenFinished
+    
+    def step(self, byAmount:int=1)->None:
+        self.estimator.addAmount(toAdd=byAmount)
+        if self.estimator.isFinished() is True:
+            self.sl.print(f"finished {self.taskName} in {self.estimator.estimatedPrettyTotalTime()}")
+            self.sl.newline(flush=True)
+        else: 
+            self.sl.print(
+                f"doing {self.taskName}: {self.estimator.progress*100:.4g} % done, "
+                f"eta: {self.estimator.remainingPrettyTime()}")
