@@ -6,7 +6,7 @@ from .__typing import (
     Iterable, Callable, Any, Iterable, OrderedDict,
     Generic, TypeVar, ContextManager,
     LiteralString, Self, TypeGuard, Literal,
-    override, assertIsinstance, Union,
+    override, assertIsinstance, Union, TextIO, 
 )
 from .prettyFormats import prettyTime, SingleLinePrinter
 from .protocols import _T, _P
@@ -758,12 +758,13 @@ class ProgressBar():
     __slots__ = ("estimator", "sl", "taskName", "newLineWhenFinished", )
     
     @staticmethod
-    def simpleConfig(nbSteps:int, taskName:str, useEma:bool=True)->"ProgressBar":
+    def simpleConfig(nbSteps:int, taskName:str, useEma:"Literal[False]|float"=False,
+                     newLineWhenFinished:bool=True, file:"TextIO|None"=None)->"ProgressBar":
         return ProgressBar(
-            estimator=(RemainingTime_ema(finalAmount=nbSteps, start=True, emaCoef=0.2) 
-                       if useEma else RemainingTime_mean(finalAmount=nbSteps, start=True)),
-            printer=SingleLinePrinter(file=None),
-            taskName=taskName, newLineWhenFinished=True)
+            estimator=(RemainingTime_mean(finalAmount=nbSteps, start=True) if useEma is False 
+                       else RemainingTime_ema(finalAmount=nbSteps, start=True, emaCoef=useEma)),
+            printer=SingleLinePrinter(file=file),
+            taskName=taskName, newLineWhenFinished=newLineWhenFinished)
     
     def __init__(self, estimator:_RemainingTime_Base, printer:SingleLinePrinter,
                  taskName: str, newLineWhenFinished:bool=True) -> None:
@@ -776,7 +777,9 @@ class ProgressBar():
         self.estimator.addAmount(toAdd=byAmount)
         if self.estimator.isFinished() is True:
             self.sl.print(f"finished {self.taskName} in {self.estimator.estimatedPrettyTotalTime()}")
-            self.sl.newline(flush=True)
+            if self.newLineWhenFinished is True:
+                self.sl.newline(flush=True)
+            else: self.sl.clearLine(flush=True)
         else: 
             self.sl.print(
                 f"doing {self.taskName}: {self.estimator.progress*100:05.2f} % done, "
