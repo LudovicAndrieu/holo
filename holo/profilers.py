@@ -567,6 +567,7 @@ def convert_perfCounter_to_datetime(t:float)->datetime:
 
 class _RemainingTime_Base():
     """util class to estimate the time remaining for a task"""
+    __slots__ = ("finalAmount", "__currentAmount", "startTime", "endTime", )
     EPSILON = 1.0e-6
     
     def __init__(self, finalAmount:"int|float", *, start:bool)->None:
@@ -692,7 +693,7 @@ class _RemainingTime_Base():
     
     def _internalSetCurrentAmount(self, value:float)->None:
         if value < 0.0: raise ValueError(f"invalide value for currentAmount: {value} < 0.0")
-        if value > self.finalAmount + self.EPSILON: 
+        if value > self.finalAmount + self.EPSILON:
             raise ValueError(f"invalide value for currentAmount: {value} > finalAmount({self.finalAmount}) + epsilon")
         self.__currentAmount: float = value
     
@@ -703,6 +704,7 @@ class _RemainingTime_Base():
         
 
 class RemainingTime_mean(_RemainingTime_Base):
+    __slots__ = ()
     
     @override
     def getCurrentAmountPerSec(self)->"float|None":
@@ -715,6 +717,7 @@ class RemainingTime_mean(_RemainingTime_Base):
     
     
 class RemainingTime_ema(_RemainingTime_Base):
+    __slots__ = ("emaCoef", "_tLastAdd", "__currentSpeed", )
     
     def __init__(self, finalAmount:"int|float", *, start:bool, emaCoef:float=0.75)->None:
         assert 0.0 < emaCoef <= 1.0, f"invalide value for emaCoef: {emaCoef}"
@@ -755,23 +758,27 @@ class RemainingTime_ema(_RemainingTime_Base):
 
 
 class ProgressBar():
-    __slots__ = ("estimator", "sl", "taskName", "newLineWhenFinished", )
+    __slots__ = ("estimator", "sl", "taskName", "newLineWhenFinished", 
+                 "updateEvery", "tLastUpdate", )
     
     @staticmethod
     def simpleConfig(nbSteps:int, taskName:str, useEma:"Literal[False]|float"=False,
-                     newLineWhenFinished:bool=True, file:"TextIO|None"=None)->"ProgressBar":
+                     newLineWhenFinished:bool=True, file:"TextIO|None"=None,
+                     updateEvery:float=(1/30))->"ProgressBar":
         return ProgressBar(
             estimator=(RemainingTime_mean(finalAmount=nbSteps, start=True) if useEma is False 
                        else RemainingTime_ema(finalAmount=nbSteps, start=True, emaCoef=useEma)),
             printer=SingleLinePrinter(file=file),
-            taskName=taskName, newLineWhenFinished=newLineWhenFinished)
+            taskName=taskName, newLineWhenFinished=newLineWhenFinished, updateEvery=updateEvery)
     
     def __init__(self, estimator:_RemainingTime_Base, printer:SingleLinePrinter,
-                 taskName: str, newLineWhenFinished:bool=True) -> None:
+                 taskName: str, newLineWhenFinished:bool=True, updateEvery:float=0.0) -> None:
         self.estimator: _RemainingTime_Base = estimator
         self.sl: SingleLinePrinter = printer
         self.taskName: str = taskName
         self.newLineWhenFinished: bool = newLineWhenFinished
+        self.updateEvery: float = updateEvery
+        self.tLastUpdate: float = -updateEvery # to ensure first step will print
     
     def step(self, byAmount:int=1)->None:
         self.estimator.addAmount(toAdd=byAmount)
@@ -780,7 +787,10 @@ class ProgressBar():
             if self.newLineWhenFinished is True:
                 self.sl.newline(flush=True)
             else: self.sl.clearLine(flush=True)
-        else: 
-            self.sl.print(
-                f"doing {self.taskName}: {self.estimator.progress*100:05.2f} % done, "
-                f"rem: {self.estimator.remainingPrettyTime()}")
+        else:
+            t = perf_counter()
+            if (t-self.tLastUpdate) >= self.updateEvery:
+                self.tLastUpdate = t
+                self.sl.print(
+                    f"doing {self.taskName}: {self.estimator.progress*100:05.2f} % done, "
+                    f"rem: {self.estimator.remainingPrettyTime()}")
