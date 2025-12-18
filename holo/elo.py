@@ -1,16 +1,17 @@
-from holo.__typing import Literal, Iterable, DefaultDict
+from holo.__typing import Literal, Iterable, DefaultDict, Generic, TypeVar
 
 _GameResult = Literal["win", "lose", "draw", True, False, None]
 """win == True | lose == False | draw == None"""
 
-
-
-class Player():
-    __slots__ = ("name", "elo", )
+_T_Datas = TypeVar("_T_Datas")
+class Player(Generic[_T_Datas]):
+    __slots__ = ("name", "elo", "datas")
     
-    def __init__(self, name:str, defaultElo:float=1000) -> None:
+    def __init__(self, name:str, defaultElo:float=1000, 
+                 datas:_T_Datas=None) -> None:
         self.name: str = name
         self.elo: float = defaultElo
+        self.datas: _T_Datas = datas
 
     def expectedWinRate(self, opponent:"Player")->float:
         return 1 / (1 + 10 ** ((opponent.elo - self.elo)/400))
@@ -62,7 +63,7 @@ class Ranking():
         player.elo += deltaEloPlayer
         opponent.elo += deltaEloOpponent
     
-    def updateMultiple(self, results:"list[tuple[Player, Player, _GameResult]]")->None:
+    def updateMultiple(self, results:"Iterable[tuple[Player, Player, _GameResult]]")->None:
         """update the elo of all players after multiple game\n
         this has a different result than doin one update at the time\n
         match don't need to be duplicated, results are applied to both\n
