@@ -13,10 +13,7 @@ dependencies = [
     "numba",
     "matplotlib",
     "typing_extensions",
-    "requests",
-    "mypy",
     "multiprocess",
-    "ffmpeg-python"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",

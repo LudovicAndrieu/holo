@@ -4,9 +4,7 @@ from .__typing import TypeVar, Generic, Literal
 from .protocols import SupportsRead, SupportsWrite
 
 
-try: from pyx_reader import ReaderFast
-except ImportError: ReaderFast = None # fallback when absent
-
+ReaderFast = None
 
 BIG_READSIZE = 500_000 
 """500k octes\n
