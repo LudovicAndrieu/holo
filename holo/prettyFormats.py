@@ -778,6 +778,8 @@ class PrettyfyClass(ClassFactory):
             attrsToValue[attrName] = getattr(self, attrName)
         if (cfg.showDict is True) and hasattr(self, "__dict__"):
             attrsToValue.update(self.__dict__)
+        for attrToHide in cfg.hideAttrs:
+            attrsToValue.pop(attrToHide)
         return _ObjectRepr(className=self.__class__.__name__, args=(), 
                            kwargs=attrsToValue, forceStrKey=True)
 
