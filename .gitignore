@@ -1,5 +1,7 @@
 **/__pycache__
 **/.vscode
+# for my tests
+**/*.ipynb
 # cython related
 **/*.pyd
 **/*.so
