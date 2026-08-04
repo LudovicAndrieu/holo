@@ -247,6 +247,7 @@ def generer_couleurs_distinctes(
     # convert the rgb colors to CIE LAB 
     # (distances in that space are based on human perception)
     candidates_lab = rgb2lab(candidates_rgb) # (nbCandidates, 3) of float
+    candidates_lab[:, 0] = (candidates_lab[:, 0] - 50) * 2
     
     if not (1 <= n <= nbCandidates):
         raise ValueError(f"n={n} must be in [1, {nbCandidates}]")
@@ -274,6 +275,8 @@ def generer_couleurs_distinctes(
         dist_to_selected[best_candidate] = -numpy.inf # avoid being reselected
     
     # convert back the LAB colors to RGB
+    candidates_lab[:, 0] = (candidates_lab[:, 0] / 2) + 50
     colors_rgb = lab2rgb(candidates_lab[selected_candiates])[0]
-    return [(r, g, b) for r, g, b in colors_rgb]
+    return [(r, g, b) for r, g, b in colors_rgb.tolist()]
 
+ 
